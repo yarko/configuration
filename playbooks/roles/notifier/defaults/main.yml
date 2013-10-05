@@ -55,6 +55,13 @@ notifier_debian_pkgs:
   - rsyslog
   - supervisor
 
+# Theming -- use theme specified for LMS
+# To turn off theming, specify notifier_theme_name: ''
+# Stanford, for example, uses notifier_theme_name: 'stanford'
+notifier_theme_name: $edxapp_theme_name
+notifier_theme_source_repo: $edxapp_theme_source_repo
+notifier_theme_version: $edxapp_theme_version
+
 #
 # This structure is iterated over in order to build both
 # the environment file for the notifier which is sourced
@@ -86,3 +93,4 @@ notifier_env_vars:
   US_HTTP_AUTH_USER: $NOTIFIER_USER_SERVICE_HTTP_AUTH_USER
   US_HTTP_AUTH_PASS: $NOTIFIER_USER_SERVICE_HTTP_AUTH_PASS
   FORUM_DIGEST_TASK_INTERVAL: $NOTIFIER_DIGEST_TASK_INTERVAL
+  THEME_NAME: $notifier_theme_name

@@ -8,9 +8,7 @@
   ignore_errors: yes
 
 - name: notifier | checkout code
-  git: 
-    dest={{ NOTIFIER_CODE_DIR }} repo={{ NOTIFIER_SOURCE_REPO }} 
-    version={{ NOTIFIER_VERSION }}
+  git: dest={{ NOTIFIER_CODE_DIR }} repo={{ NOTIFIER_SOURCE_REPO }} version={{ NOTIFIER_VERSION }}
   notify:
     - notifier | restart notifier
   tags:
@@ -22,6 +20,17 @@
 - name: notifier | source repo group perms
   file: 
     path={{ NOTIFIER_SOURCE_REPO }} mode=2775 state=directory
+  tags:
+    - notifier
+    - deploy
+    - install
+    - update
+
+# Theme
+
+- name: checkout theme
+  git: dest={{app_base_dir}}/themes/{{notifier_theme_name}} repo={{notifier_theme_source_repo}} version={{notifier_theme_version}}
+  when: notifier_theme_name != ''
   tags:
     - notifier
     - deploy
@@ -54,3 +63,4 @@
   - deploy
   - install
   - update
+
