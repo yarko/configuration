@@ -13,6 +13,8 @@ pkgs:
   nginx:
     state: installed
 
+nginx_template_dir: .
+
 nginx_xserver_gunicorn_hosts:
   - 127.0.0.1
 nginx_xqueue_gunicorn_hosts:
