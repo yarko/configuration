@@ -1,0 +1,102 @@
+---
+#
+# edX Configuration
+#
+# github:     https://github.com/edx/configuration
+# wiki:       https://github.com/edx/configuration/wiki
+# code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
+# license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
+#
+#
+#
+# Tasks for role gerrit
+# 
+# Overview: Installs and configures Gerrit on the server.  Requires
+# several secure variables to be defined that are not defined in this
+# role.
+# 
+#
+# Dependencies:
+#   - An existing running postgres database.
+#   - An S3 bucket containing all of the necessary plugin jars.
+#
+# 
+# Example play:
+#
+# - name: Deploy gerrit
+#   hosts: gerrit
+#   gather_facts: True
+#   sudo: True
+#   roles:
+#     - gerrit
+
+- name: gerrit | system package pre-requisites installed
+  apt: pkg={{ item }}
+  with_items: gerrit_debian_pkgs
+
+- name: gerrit | user
+  user: name={{ gerrit_user }} shell=/bin/bash
+
+- name: gerrit | directories created
+  file: path={{ item }} mode=700 owner={{ gerrit_user }} state=directory
+  with_items:
+    - "{{ GERRIT_HOME }}"
+    - "{{ GERRIT_DATA }}"
+
+- name: gerrit | correct java version selected
+  alternatives: name=java path=/usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
+
+- name: gerrit | war file downloaded
+  get_url: url={{ gerrit_war_url }} dest=/home/{{ gerrit_user }}/gerrit.war owner={{ gerrit_user }}
+
+- name: gerrit | database created
+  postgresql_db: >
+    name={{ gerrit_db_name }}
+    encoding=UTF-8
+    login_host={{ gerrit_db_hostname }} login_user={{ gerrit_db_admin_username }} login_password={{ gerrit_db_admin_password }}
+
+# For some reason the below task is not idempotent.  Subsequent runs emit this error:
+# 
+# failed to parse: SUDO-SUCCESS-pluxzpsartjjbkjsmcmbakyhhjzsmpqb
+# Traceback (most recent call last):
+#   File "/home/ubuntu/.ansible/tmp/ansible-1387511505.82-33988322336601/postgresql_user", line 1510, in <module>
+#     main()
+#   File "/home/ubuntu/.ansible/tmp/ansible-1387511505.82-33988322336601/postgresql_user", line 457, in main
+#     changed = user_alter(cursor, user, password, role_attr_flags, encrypted, expires)
+#   File "/home/ubuntu/.ansible/tmp/ansible-1387511505.82-33988322336601/postgresql_user", line 191, in user_alter
+#     cursor.execute(select, {"user": user})
+# psycopg2.ProgrammingError: permission denied for relation pg_authid
+
+- name: gerrit | database user created
+  postgresql_user: >
+    db={{ gerrit_db_name }}
+    name={{ gerrit_db_username }}
+    password={{ gerrit_db_password }}
+    priv=ALL
+    login_host={{ gerrit_db_hostname }} login_user={{ gerrit_db_admin_username }} login_password={{ gerrit_db_admin_password }}
+
+- name: gerrit | config directory created
+  file: path={{ GERRIT_HOME }}/etc owner={{ gerrit_user }} state=directory
+
+- name: gerrit | configuration uploaded
+  template: src=gerrit.config.j2 dest={{ GERRIT_HOME }}/etc/gerrit.config owner={{ gerrit_user }}
+  notify: gerrit | restarted
+
+- name: gerrit | initialized
+  command: sudo -u {{ gerrit_user }} java -jar /home/{{ gerrit_user }}/gerrit.war init -d {{ GERRIT_HOME }} creates={{ GERRIT_HOME }}/bin
+
+- name: gerrit | plugins installed
+  s3: >
+    bucket={{ gerrit_artifact_s3_bucket.name }}
+    object={{ item.jar }}
+    dest={{ item.dest }}/{{ item.jar }}
+    mode=get
+    aws_access_key="{{ gerrit_artifact_s3_bucket.aws_access_key_id }}"
+    aws_secret_key="{{ gerrit_artifact_s3_bucket.aws_secret_access_key }}"
+  sudo_user: "{{ gerrit_user }}"
+  notify: gerrit | restarted
+  with_items:
+    - { jar: "github-oauth-{{ gerrit_github_plugin_version }}.jar", dest: "{{ GERRIT_HOME }}/lib" }
+    - { jar: "github-plugin-{{ gerrit_github_plugin_version }}.jar", dest: "{{ GERRIT_HOME }}/plugins" }
+    - { jar: "singleusergroup-{{ gerrit_singleusergroup_plugin_version }}.jar", dest: "{{ GERRIT_HOME }}/plugins" }
+    - { jar: "replication-{{ gerrit_replication_plugin_version }}.jar", dest: "{{ GERRIT_HOME }}/plugins" }

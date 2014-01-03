@@ -1,0 +1,15 @@
+---
+gerrit_github_client_id: alskdjdfkjasdjfsdlfkj
+gerrit_github_client_secret: 0938908450deffaaa87665a555a6fc6de5777f77f
+gerrit_db_hostname: somedb.88374jhyehf.us-east-1.rds.amazonaws.com
+gerrit_db_admin_username: adminuser
+gerrit_db_admin_password: adminpassword
+gerrit_db_password: gerrituserpassword
+gerrit_artifact_s3_bucket:
+  name: some-s3-bucket
+  aws_access_key_id: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+  aws_secret_access_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+gerrit_provision_keypair_name: "{{ lookup('env', 'KEYPAIR_NAME') }}"
+gerrit_route53_zone: analytics.edx.org  # FIXME: s/analytics/testeng/
+gerrit_route53_name: gerrit
+gerrit_hostname: "{{ gerrit_route53_name }}.{{ gerrit_route53_zone }}"

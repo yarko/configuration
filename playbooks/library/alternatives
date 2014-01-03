@@ -1,0 +1,108 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+
+DOCUMENTATION = '''
+---
+module: alternatives
+short_description: Manages symbolic links
+description:
+    - Manages symbolic links using the 'update-alternatives' tool provided on debian-like systems. Useful when multiple programs are installed but provide similar functionality (e.g. different editors).
+options:
+  name:
+    description:
+      - The generic name of the link (e.g. java).
+    required: true
+  path:
+    description:
+      - The path to the real executable that the link should point to.
+    required: true
+  link:
+    description:
+      - The path to the symbolic link that should point to the real executable (e.g. /usr/bin/java).
+    required: false
+requirements: [ ]
+'''
+
+EXAMPLES = '''
+- name: correct java version selected
+  alternatives: name=java path=/usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
+
+- name: alternatives link created
+  alternatives: name=hadoop-conf link=/etc/hadoop/conf path=/etc/hadoop/conf.ansible
+'''
+
+import subprocess
+
+UPDATE_ALTERNATIVES = '/usr/sbin/update-alternatives'
+DEFAULT_LINK_PRIORITY = 50
+
+def main():
+
+    module = AnsibleModule(
+        argument_spec = dict(
+            name = dict(required=True),
+            path  = dict(required=True),
+            link = dict(required=False),
+        )
+    )
+
+    params = module.params
+    name = params['name']
+    path = params['path']
+    link = params['link']
+
+    current_path = None
+    all_alternatives = []
+    try:
+        query_output = subprocess.check_output([UPDATE_ALTERNATIVES, '--query', name])
+
+        # Gather the current setting and all alternatives from the query output.
+        # Query output should look something like this:
+
+            # Name: java
+            # Link: /usr/bin/java
+            # Slaves:
+            #  java.1.gz /usr/share/man/man1/java.1.gz
+            # Status: manual
+            # Best: /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
+            # Value: /usr/lib/jvm/java-6-openjdk-amd64/jre/bin/java
+
+            # Alternative: /usr/lib/jvm/java-6-openjdk-amd64/jre/bin/java
+            # Priority: 1061
+            # Slaves:
+            #  java.1.gz /usr/lib/jvm/java-6-openjdk-amd64/jre/man/man1/java.1.gz
+
+            # Alternative: /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
+            # Priority: 1071
+            # Slaves:
+            #  java.1.gz /usr/lib/jvm/java-7-openjdk-amd64/jre/man/man1/java.1.gz
+
+        for line in query_output.splitlines():
+            split_line = line.split(':')
+            if len(split_line) == 2:
+                key = split_line[0]
+                value = split_line[1].strip()
+                if key == 'Value':
+                    current_path = value
+                elif key == 'Alternative':
+                    all_alternatives.append(value)
+    except subprocess.CalledProcessError:
+        pass
+
+    if current_path != path:
+        # install the requested path if necessary
+        if path not in all_alternatives:
+            subprocess.check_call([UPDATE_ALTERNATIVES, '--install', link, name, path, str(DEFAULT_LINK_PRIORITY)])
+
+        # select the requested path
+        subprocess.check_call([UPDATE_ALTERNATIVES, '--set', name, path])
+
+        module.exit_json(changed=True)
+    else:
+        module.exit_json(changed=False)
+
+# this is magic, see lib/ansible/module_common.py
+#<<INCLUDE_ANSIBLE_MODULE_COMMON>>
+main()
+
