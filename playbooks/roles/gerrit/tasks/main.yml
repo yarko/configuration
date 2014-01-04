@@ -54,8 +54,9 @@
     name={{ gerrit_db_name }}
     encoding=UTF-8
     login_host={{ gerrit_db_hostname }} login_user={{ gerrit_db_admin_username }} login_password={{ gerrit_db_admin_password }}
+  register: db_created
 
-# For some reason the below task is not idempotent.  Subsequent runs emit this error:
+# The below task is not idempotent.  Subsequent runs emit this error:
 # 
 # failed to parse: SUDO-SUCCESS-pluxzpsartjjbkjsmcmbakyhhjzsmpqb
 # Traceback (most recent call last):
@@ -67,6 +68,10 @@
 #     cursor.execute(select, {"user": user})
 # psycopg2.ProgrammingError: permission denied for relation pg_authid
 
+# This is due to the fact that the postgres RDS setup does not give the admin user
+# superuser priveleges, so the postgres_user module cannot read the old password
+# to see if the password changed, which causes the module to fail.
+
 - name: gerrit | database user created
   postgresql_user: >
     db={{ gerrit_db_name }}
@@ -74,6 +79,7 @@
     password={{ gerrit_db_password }}
     priv=ALL
     login_host={{ gerrit_db_hostname }} login_user={{ gerrit_db_admin_username }} login_password={{ gerrit_db_admin_password }}
+  when: db_created.changed
 
 - name: gerrit | config directory created
   file: path={{ GERRIT_HOME }}/etc owner={{ gerrit_user }} state=directory
