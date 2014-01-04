@@ -5,11 +5,13 @@
 # instance will be modified to point to the provisioned instance.
 #
 # Usage:
-#   ansible-playbook gerrit-provision.yml -e "@/path/to/secure/vars/gerrit.yml"
+#   ansible-playbook gerrit-provision.yml -e "secure_dir=/path/to/secure/dir"
 
 - name: Provision gerrit review server instance
   hosts: localhost
   gather_facts: False
+  vars_files:
+    - "{{ secure_dir }}/vars/gerrit.yml"
   vars:
     instance_type: m1.medium
     region: us-east-1
@@ -94,6 +96,8 @@
   hosts: gerrit
   sudo: True
   gather_facts: True
+  vars_files:
+    - "{{ secure_dir }}/vars/gerrit.yml"
   pre_tasks:
     - name: update apt
       apt: update_cache=yes
