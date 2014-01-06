@@ -15,4 +15,6 @@
 # 
 #
 - name: gerrit | restarted
-  command: sudo -u {{ gerrit_user }} {{ GERRIT_HOME }}/bin/gerrit.sh restart
+  command: >
+    {{ GERRIT_HOME }}/bin/gerrit.sh restart
+  sudo_user: "{{ gerrit_user }}"

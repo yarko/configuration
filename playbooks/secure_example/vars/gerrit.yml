@@ -10,6 +10,12 @@ gerrit_artifact_s3_bucket:
   aws_access_key_id: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
   aws_secret_access_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
 gerrit_provision_keypair_name: "{{ lookup('env', 'KEYPAIR_NAME') }}"
-gerrit_route53_zone: analytics.edx.org  # FIXME: s/analytics/testeng/
+gerrit_route53_zone: testeng.edx.org 
 gerrit_route53_name: gerrit
 gerrit_hostname: "{{ gerrit_route53_name }}.{{ gerrit_route53_zone }}"
+gerrit_smtp_enabled: false
+gerrit_email: gerrit.edx.org
+gerrit_smtp_server: smtp.edx.org
+gerrit_smtp_encryption: none
+gerrit_smtp_user: someuser
+gerrit_smtp_pass: somepassword

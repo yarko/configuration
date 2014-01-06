@@ -17,9 +17,7 @@ GERRIT_DATA: /var/lib/gerrit/repositories
 gerrit_debian_pkgs:
   - git
   - openjdk-7-jdk
-  - postgresql
-  - libpq-dev
-  - python-psycopg2
+  - python-mysqldb
   - python-boto
 gerrit_version: 2.8
 gerrit_war_url: "https://gerrit-releases.storage.googleapis.com/gerrit-{{ gerrit_version }}.war"
@@ -31,3 +29,5 @@ gerrit_sshd_port: 29418
 gerrit_github_plugin_version: 2.8
 gerrit_singleusergroup_plugin_version: 1.0-SNAPSHOT
 gerrit_replication_plugin_version: v2.8
+gerrit_jre_path: /usr/lib/jvm/java-7-openjdk-amd64/jre
+gerrit_java_exe_path: "{{ gerrit_jre_path }}/bin/java"

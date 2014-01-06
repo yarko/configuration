@@ -5,7 +5,7 @@
     canonicalWebUrl = http://{{ gerrit_hostname }}:8080/
     changeScreen = CHANGE_SCREEN2
 [database]
-    type = POSTGRESQL
+    type = MYSQL
     hostname = {{ gerrit_db_hostname }}
     database = {{ gerrit_db_name }}
     username = {{ gerrit_db_username }}
@@ -15,10 +15,14 @@
     httpHeader = GITHUB_USER
     logoutUrl = /oauth/reset
 [sendemail]
-    smtpServer = localhost
+    enable = {{ gerrit_smtp_enabled }}
+    smtpServer = {{ gerrit_smtp_server }}
+    smtpEncryption = {{ gerrit_smtp_encryption }}
+    smtpUser = {{ gerrit_smtp_user }}
+    smtpPass = {{ gerrit_smtp_pass }}
 [container]
     user = {{ gerrit_user }}
-    javaHome = /usr/lib/jvm/java-7-openjdk-amd64/jre
+    javaHome = {{ gerrit_jre_path }}
 [sshd]
     listenAddress = *:{{ gerrit_sshd_port }}
 [httpd]
@@ -30,4 +34,8 @@
     url = https://github.com
     clientId = {{ gerrit_github_client_id }}
     clientSecret = {{ gerrit_github_client_secret }}
-
+[user]
+    email = {{ gerrit_email }}
+    anonymousCoward = Anonymous User
+[suggest]
+    accounts = true

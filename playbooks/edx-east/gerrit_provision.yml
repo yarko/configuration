@@ -5,7 +5,7 @@
 # instance will be modified to point to the provisioned instance.
 #
 # Usage:
-#   ansible-playbook gerrit_provision.yml -i gerrit_inventory.ini -e "secure_dir=/path/to/secure/dir"
+#   ansible-playbook gerrit_provision.yml -i inventory.ini -e "secure_dir=/path/to/secure/dir"
 
 - name: Provision gerrit review server instance
   hosts: localhost
@@ -13,19 +13,25 @@
   vars_files:
     - "{{ secure_dir }}/vars/gerrit.yml"
   vars:
-    instance_type: m1.medium
-    region: us-east-1
-    image: ami-a73264ce
-    security_group_name: Gerrit
-    rds_security_group_name: gerritdb
-    request_token: gerrit2
+    gerrit_aws_region: us-east-1
+    gerrit_instance_type: m1.medium
+    gerrit_image: ami-a73264ce
+    gerrit_security_group_name: gerrit
+    gerrit_rds_instance_name: gerrit-db
+    gerrit_rds_engine: MySQL
+    gerrit_rds_engine_version: "5.6.13"
+    gerrit_rds_security_group_name: gerrit-db-sec
+    gerrit_rds_instance_type: "db.m1.small"
+    gerrit_rds_size: 8
+    gerrit_db_port: 3306
+    gerrit_request_token: gerrit4
   tasks:
     - name: security group created
       local_action:
         module: ec2_group
-        name: "{{ security_group_name }}"
+        name: "{{ gerrit_security_group_name }}"
         description: "A gerrit review server"
-        region: "{{ region }}"
+        region: "{{ gerrit_aws_region }}"
         rules:
           - proto: tcp
             from_port: 22
@@ -36,30 +42,22 @@
             to_port: 8080
             cidr_ip: 0.0.0.0/0
           - proto: tcp
-            from_port: 80
-            to_port: 80
-            cidr_ip: 0.0.0.0/0
-          - proto: tcp
-            from_port: 443
-            to_port: 443
-            cidr_ip: 0.0.0.0/0
-          - proto: tcp
             from_port: 29418
             to_port: 29418
             cidr_ip: 0.0.0.0/0
       register: security
 
-    - name: launch instance
+    - name: instance launched
       local_action:
         module: ec2
         key_name: "{{ gerrit_provision_keypair_name }}"
         group_id: "{{ security.group_id }}"
-        instance_type: "{{ instance_type }}"
-        image: "{{ image }}"
+        instance_type: "{{ gerrit_instance_type }}"
+        image: "{{ gerrit_image }}"
         count: 1
-        region: "{{ region }}"
+        region: "{{ gerrit_aws_region }}"
         wait: yes
-        id: "{{ request_token }}"
+        id: "{{ gerrit_request_token }}"
         instance_tags: '{ "Name": "gerrit" }'
       register: ec2
 
@@ -78,11 +76,32 @@
     - name: added to RDS security group
       local_action:
         module: rds_group
-        name: "{{ rds_security_group_name }}"
+        name: "{{ gerrit_rds_security_group_name }}"
         description: "A gerrit review server database"
-        region: "{{ region }}"
+        region: "{{ gerrit_aws_region }}"
         rules:
           - group_id: "{{ security.group_id }}"
+
+    - name: RDS instance created
+      local_action:
+        module: rds_local
+        command: create
+        db_engine: "{{ gerrit_rds_engine }}"
+        engine_version: "{{ gerrit_rds_engine_version }}"
+        port: "{{ gerrit_db_port }}"
+        instance_name: "{{ gerrit_rds_instance_name }}"
+        instance_type: "{{ gerrit_rds_instance_type }}"
+        size: "{{ gerrit_rds_size }}"
+        region: "{{ gerrit_aws_region }}"
+        username: "{{ gerrit_db_admin_username }}"
+        password: "{{ gerrit_db_admin_password }}"
+        security_groups: "{{ gerrit_rds_security_group_name }}"
+        wait: yes
+        wait_timeout: 3000
+
+    - name: instance added to gerrit host group
+      local_action: add_host hostname={{ item.public_ip }} groupname=gerrit ansible_ssh_user=ubuntu
+      with_items: ec2.instances
 
     - name: SSH available
       local_action: wait_for host={{ item.public_dns_name }} port=22 timeout=380 state=started
