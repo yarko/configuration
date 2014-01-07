@@ -43,7 +43,7 @@
     - "{{ GERRIT_HOME }}"
     - "{{ GERRIT_DATA }}"
 
-# installing maven reverts the selected alternative to openjdk 6 (annoyingly)
+# jdk 7 is lower priority than jdk 6, so force selection of jdk 7
 - name: gerrit | correct java version selected
   alternatives: name=java path={{ gerrit_java_exe_path }}
 
