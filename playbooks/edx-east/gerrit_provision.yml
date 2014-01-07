@@ -17,6 +17,8 @@
     gerrit_instance_type: m1.medium
     gerrit_image: ami-a73264ce
     gerrit_security_group_name: gerrit
+    gerrit_repo_volume_device: /dev/sdf
+    gerrit_repo_volume_size: 30
     gerrit_rds_instance_name: gerrit-db
     gerrit_rds_engine: MySQL
     gerrit_rds_engine_version: "5.6.13"
@@ -60,6 +62,15 @@
         id: "{{ gerrit_request_token }}"
         instance_tags: '{ "Name": "gerrit" }'
       register: ec2
+
+    - name: repository volume attached
+      local_action:
+        module: ec2_vol
+        region: "{{ gerrit_aws_region }}"
+        device_name: "{{ gerrit_repo_volume_device }}"
+        instance: "{{ item.id }}"
+        volume_size: "{{ gerrit_repo_volume_size }}"
+      with_items: ec2.instances
 
     - name: domain name assigned
       local_action:
@@ -106,5 +117,38 @@
     - name: SSH available
       local_action: wait_for host={{ item.public_dns_name }} port=22 timeout=380 state=started
       with_items: ec2.instances
+
+
+- name: Hardware configuration of instance
+  hosts: gerrit
+  sudo: True
+  gather_facts: False
+  vars_files:
+    - "{{ secure_dir }}/vars/gerrit.yml"
+    - roles/gerrit/defaults/main.yml
+  vars:
+    gerrit_repo_volume_os_device: /dev/xvdf
+  tasks:
+    - name: repository volume fs exists
+      shell: file -s {{ gerrit_repo_volume_os_device }} | grep ext4
+      ignore_errors: yes
+      register: is_formatted
+
+    - name: repository volume formatted
+      command: mkfs -t ext4 {{ gerrit_repo_volume_os_device }}
+      when: is_formatted | failed
+
+    - name: repository mount point available
+      file: dest={{ GERRIT_DATA }} state=directory
+
+    - name: fstab includes repository volume
+      lineinfile:
+        dest: /etc/fstab
+        regexp: "^{{ gerrit_repo_volume_os_device }}"
+        line: "{{ gerrit_repo_volume_os_device }}       {{ GERRIT_DATA }}   ext4    defaults        0       2"
+
+    - name: repository volume mounted
+      command: mount {{ gerrit_repo_volume_os_device }}
+      ignore_errors: yes
 
 - include: gerrit_deploy.yml
