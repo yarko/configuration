@@ -67,6 +67,7 @@ EDXAPP_FEATURES:
   PREVIEW_LMS_BASE: $EDXAPP_PREVIEW_LMS_BASE
   ENABLE_S3_GRADE_DOWNLOADS: true
   USE_CUSTOM_THEME: $edxapp_use_custom_theme
+  ENABLE_FEEDBACK_SUBMISSION: true
 
 EDXAPP_BOOK_URL: ''
 # This needs to be set to localhost
