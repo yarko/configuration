@@ -1,5 +1,5 @@
 ---
-- name: restart rsyslogd
+- name: common | restart rsyslogd
   service: name=rsyslog state=restarted
   sudo: True
 - name: restart ssh

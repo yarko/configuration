@@ -1,14 +1,14 @@
 ---
 
 # elasticsearch
-# 
+#
 # Dependencies:
 #
 #   * common
 #   * oraclejdk
-# 
+#
 # Example play:
-#  
+#
 # This role can be used to do a single-server or clustered
 # installation of the elasticsearch service.  When a cluster
 # is being installed, there are two important things that
@@ -29,14 +29,14 @@
 #    - elasticsearch
 #
 
-- name: download elasticsearch
+- name:  elasticsearch | download elasticsearch
   get_url: >
     url={{ elasticsearch_url }}
     dest=/var/tmp/{{ elasticsearch_file }}
     force=no
   register: elasticsearch_reinstall
 
-- name: install elasticsearch from local package
+- name: elasticsearch | install elasticsearch from local package
   shell: >
     dpkg -i  --force-confold /var/tmp/elasticsearch-{{ elasticsearch_version }}.deb
     executable=/bin/bash
@@ -57,7 +57,7 @@
   template: >
     src=etc/default/elasticsearch.j2 dest=/etc/default/elasticsearch
   when: ELASTICSEARCH_CLUSTERED
-    
+
 - name: drop the elasticsearch config
   template: >
     src=edx/etc/elasticsearch/elasticsearch.yml.j2 dest={{ elasticsearch_cfg_dir }}/elasticsearch.yml
@@ -68,20 +68,20 @@
   template: >
     src=edx/etc/elasticsearch/logging.yml.j2 dest={{ elasticsearch_cfg_dir }}/logging.yml
     mode=0744
-  when: ELASTICSEARCH_CLUSTERED  
-    
+  when: ELASTICSEARCH_CLUSTERED
+
   # Plugin installation fails hard when the plugin already
   # exists. This is problematic if this is upgraded.
 
 - name: check if the bigdesk plugin is installed
   stat: path=/usr/share/elasticsearch/plugins/bigdesk
   register: bigdesk
-  
+
 - name: install bigdesk plugin
   shell: >
     /usr/share/elasticsearch/bin/plugin -install lukas-vlcek/bigdesk/2.2.0
   when: bigdesk.stat.isdir is not defined
-  
+
 - name: Ensure elasticsearch is enabled and started
   service: name=elasticsearch state=started enabled=yes
 
