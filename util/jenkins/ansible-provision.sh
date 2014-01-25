@@ -170,15 +170,10 @@ EOF
 fi
 
 declare -A deploy
-
-deploy[edxapp]=$edxapp
-deploy[forum]=$forum
-deploy[xqueue]=$xqueue
-deploy[xserver]=$xserver
-deploy[ora]=$ora
-deploy[discern]=$discern
-deploy[certs]=$certs
-
+roles="edxapp forum xqueue xserver ora discern certs"
+for role in $roles; do
+    deploy[$role]=${!role}
+done
 
 # If reconfigure was selected or if starting from an ubuntu 12.04 AMI
 # run non-deploy tasks for all roles
@@ -188,7 +183,7 @@ if [[ $reconfigure == "true" || $server_type == "ubuntu_12.04" ]]; then
 fi
 
 # Run deploy tasks for the roles selected
-for i in "${!deploy[@]}"; do
+for i in $roles; do
     if [[ ${deploy[$i]} == "true" ]]; then
         cat $extra_vars
         ansible-playbook ${i}.yml -i "${deploy_host}," -e "@${extra_vars}" --user ubuntu --tags deploy
