@@ -86,7 +86,7 @@
 - name: ora | update supervisor configuration
   shell:  "{{ supervisor_ctl }} -c {{ supervisor_cfg }} update"
   register: supervisor_update
-  when: start_services and not devstack
+  when: not devstack
   changed_when: supervisor_update.stdout != ""
 
 - name: ora | ensure ora is started
@@ -95,7 +95,7 @@
     supervisorctl_path={{ supervisor_ctl }}
     config={{ supervisor_cfg }}
     state=started
-  when: start_services and not devstack
+  when: not devstack
 
 - name: ora | ensure ora_celery is started
   supervisorctl_local: >
@@ -103,6 +103,15 @@
     supervisorctl_path={{ supervisor_ctl }}
     config={{ supervisor_cfg }}
     state=started
-  when: start_services and not devstack
+  when: not devstack
+
+- name: create a symlink for venv python
+  file: >
+    src="{{ ora_venv_bin }}/{{ item }}"
+    dest={{ COMMON_BIN_DIR }}/{{ item }}.ora
+    state=link
+  with_items:
+  - python
+  - pip
 
 - set_fact: ora_installed=true

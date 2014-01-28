@@ -7,17 +7,11 @@
 # code style: https://github.com/edx/configuration/wiki/Ansible-Coding-Conventions
 # license:    https://github.com/edx/configuration/blob/master/LICENSE.TXT
 #
-#
-#
-# Handlers for role certs
-#
-# Overview:
+##
+# Defaults for role stop_all_edx_services
 #
 
-- name: certs | restart certs
-  supervisorctl_local: >
-    name=certs
-    supervisorctl_path={{ supervisor_ctl }}
-    config={{ supervisor_cfg }}
-    state=restarted
-  when: certs_installed is defined
+#
+# vars are namespace with the module name.
+#
+stop_all_edx_services_role_name: stop_all_edx_services

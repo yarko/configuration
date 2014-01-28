@@ -103,7 +103,6 @@
   shell:  "{{ supervisor_ctl }} -c {{ supervisor_cfg }} update"
   register: supervisor_update
   sudo_user: "{{ supervisor_service_user }}"
-  when: start_services
   changed_when: supervisor_update.stdout != ""
 
 - name: discern | ensure discern, discern_celery has started
@@ -112,15 +111,17 @@
     supervisorctl_path={{ supervisor_ctl }}
     config={{ supervisor_cfg }}
     state=started
-  when: start_services
   with_items:
   - discern
   - discern_celery
 
 - name: discern | create a symlink for venv python
   file: >
-    src="{{ discern_venv_bin }}/python"
-    dest={{ COMMON_BIN_DIR }}/python.discern
+    src="{{ discern_venv_bin }}/{{ item }}"
+    dest={{ COMMON_BIN_DIR }}/{{ item }}.discern
     state=link
+  with_items:
+  - python
+  - pip
 
 - set_fact: discern_installed=true
