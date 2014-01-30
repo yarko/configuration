@@ -1,0 +1,17 @@
+{
+    GIT_ACCT: "yarko",
+    THEME_ACCT: "Stanford-Online",
+    OPEN_EDX: "edx",
+    edx_platform_repo: "https://{{ COMMON_GIT_MIRROR }}/{{ GIT_ACCT }}/edx-platform.git",
+    edx_platform_version: "yarko/theme-2014-01-20",
+    forum_source_repo: "https://{{ COMMON_GIT_MIRROR }}/{{ GIT_ACCT }}/cs_comments_service.git",
+    forum_version: "yarko/theme-2014-01-20",
+    ora_source_repo: "https://{{ COMMON_GIT_MIRROR }}/{{ OPEN_EDX }}/edx-ora.git",
+    ora_version: 'master',
+    ora_ease_source_repo: "https://{{ COMMON_GIT_MIRROR }}/{{ OPEN_EDX }}/ease.git",
+    ora_ease_version: 'master',
+    edxapp_use_custom_theme: true,
+    edxapp_theme_source_repo: 'https://{{ COMMON_GIT_MIRROR }}/{{ THEME_ACCT }}/edx-theme.git',
+    edxapp_theme_version: 'HEAD',
+    edxapp_theme_name: "stanford"
+}
