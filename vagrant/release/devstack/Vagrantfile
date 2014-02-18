@@ -16,7 +16,14 @@ cd /edx/app/edx_ansible/edx_ansible/playbooks
 # this can cause problems (e.g. looking for templates that no longer exist).
 /edx/bin/update configuration master
 
-ansible-playbook -i localhost, -c local vagrant-devstack.yml
+# handle case where build_version file was removed
+export EXTRA_VARS=""
+BUILD_FILE=/vagrant/build_version.yml
+[ -r ${BUILD_FILE} -a -f ${BUILD_FILE} ] && EXTRA_VARS="--extra-vars \"@${BUILD_FILE}\""
+# ansible-playbook -i localhost, -c local vagrant-devstack.yml --extra-vars "@/vagrant/build_version.yml"
+echo "EXTRA_VARS: [${EXTRA_VARS}]"
+
+ansible-playbook -i localhost, -c local vagrant-devstack.yml ${EXTRA_VARS}
 SCRIPT
 
 edx_platform_mount_dir = "edx-platform"
