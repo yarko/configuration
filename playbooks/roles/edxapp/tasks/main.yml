@@ -2,15 +2,7 @@
 #  - group_vars/all
 #  - common/tasks/main.yml
 ---
-
-
-- name: edxapp | Install logrotate configuration for tracking file
-  template: dest=/etc/logrotate.d/tracking.log src=edx_logrotate_tracking_log.j2 owner=root group=root mode=644
-  notify:
-  - "edxapp | restart edxapp"
-  - "edxapp | restart edxapp_workers"
-
-- name: edxapp | create application user
+- name: create application user
   user: >
     name="{{ edxapp_user }}" home="{{ edxapp_app_dir }}"
     createhome=no shell=/bin/false

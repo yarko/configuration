@@ -84,6 +84,7 @@ cat << EOF > $extra_vars
 ---
 enable_datadog: False
 enable_splunkforwarder: False
+enable_newrelic: False
 ansible_ssh_private_key_file: /var/lib/jenkins/${keypair}.pem
 NGINX_ENABLE_SSL: True
 NGINX_SSL_CERTIFICATE: '/var/lib/jenkins/star.sandbox.edx.org.crt'
@@ -97,7 +98,6 @@ EDXAPP_LMS_NGINX_PORT: 80
 EDXAPP_LMS_PREVIEW_NGINX_PORT: 80
 EDXAPP_CMS_NGINX_PORT: 80
 EDXAPP_SITE_NAME: ${deploy_host}
-COMMON_PYPI_MIRROR_URL: 'https://pypi.edx.org/root/pypi/+simple/'
 XSERVER_GRADER_DIR: "/edx/var/xserver/data/content-mit-600x~2012_Fall"
 XSERVER_GRADER_SOURCE: "git@github.com:/MITx/6.00x.git"
 XSERVER_LOCAL_GIT_IDENTITY: /var/lib/jenkins/git-identity-edx-pull
@@ -119,6 +119,8 @@ discern_version: $discern_version
 rabbitmq_ip: "127.0.0.1"
 rabbitmq_refresh: True
 COMMON_HOSTNAME: edx-server
+COMMON_DEPLOYMENT: edx
+COMMON_ENVIRONMENT: sandbox
 EDXAPP_STATIC_URL_BASE: $static_url_base
 
 # Settings for Grade downloads
@@ -126,6 +128,11 @@ EDXAPP_GRADE_STORAGE_TYPE: 's3'
 EDXAPP_GRADE_BUCKET: 'edx-grades'
 EDXAPP_GRADE_ROOT_PATH: 'sandbox'
 
+# send logs to s3
+AWS_S3_LOGS: true
+AWS_S3_LOGS_NOTIFY_EMAIL: devops+sandbox-log-sync@edx.org
+AWS_S3_LOGS_FROM_EMAIL: devops@edx.org
+AWS_DUMP_VARS: true
 EOF
 
 if [[ $basic_auth == "true" ]]; then
@@ -150,11 +157,13 @@ zone: $zone
 instance_tags: '{"environment": "$environment", "github_username": "$github_username", "Name": "$name_tag", "source": "jenkins", "owner": "$BUILD_USER"}'
 root_ebs_size: $root_ebs_size
 name_tag: $name_tag
-gh_users:
-  - ${github_username}
+user_info:
+  - name: ${github_username}
+    github: true
+    type: admin
 dns_zone: $dns_zone
 rabbitmq_refresh: True
-GH_USERS_PROMPT: '[$name_tag] '
+USER_CMD_PROMPT: '[$name_tag] '
 elb: $elb
 EOF
 

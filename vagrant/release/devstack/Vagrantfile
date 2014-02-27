@@ -1,3 +1,6 @@
+VAGRANTFILE_API_VERSION = "2"
+Vagrant.require_version ">= 1.3.4"
+
 MEMORY = 2048
 CPU_COUNT = 2
 
@@ -16,7 +19,7 @@ cd /edx/app/edx_ansible/edx_ansible/playbooks
 # this can cause problems (e.g. looking for templates that no longer exist).
 /edx/bin/update configuration master
 
-ansible-playbook -i localhost, -c local vagrant-devstack.yml
+ansible-playbook -i localhost, -c local vagrant-devstack.yml --tags=deploy
 SCRIPT
 
 edx_platform_mount_dir = "edx-platform"
@@ -31,7 +34,7 @@ if ENV['VAGRANT_MOUNT_BASE']
 
 end
 
-Vagrant.configure("2") do |config|
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # Creates an edX devstack VM from an official release
   config.vm.box     = "gugelhupf-devstack"

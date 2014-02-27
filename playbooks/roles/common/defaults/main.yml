@@ -26,6 +26,7 @@ COMMON_CUSTOM_DHCLIENT_CONFIG: false
 # uncomment and specifity your domains.
 # COMMON_DHCLIENT_DNS_SEARCH: ["ec2.internal","example.com"]
 
+
 COMMON_MOTD_TEMPLATE: "motd.tail.j2"
 
 common_debian_pkgs:
@@ -42,6 +43,9 @@ common_debian_pkgs:
   - python2.7
   - python-pip
   - python2.7-dev
+  # Not installed by default on vagrant ubuntu
+  # boxes
+  - curl
 
 common_pip_pkgs:
   - virtualenv==1.10.1
