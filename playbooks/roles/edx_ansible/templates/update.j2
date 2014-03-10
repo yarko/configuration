@@ -4,24 +4,28 @@
 
 set -e
 usage() {
-SAVE_IFS=$IFS
+SAVE_IFS=${IFS}
 IFS=","
     cat<<EO
 
     Usage: $PROG <repo> <version>
             -v        add verbosity to edx_ansible run
+	    -e        extra-vars settings
             -h        this
 
     <repo> - must be one of edx-platform, xqueue, cs_comments_service, xserver, ease, discern, edx-ora, configuration
-    <version> - can be a commit or tag
+    <version> - can be a commit or tag; version is optional.  If not set will use default version,
+                or settings from build-version.yml, or other extra-vars settings.
 
 EO
 IFS=$SAVE_IFS
 }
 
 PROG=${0##*/}
-while getopts "vh" opt; do
+while getopts "vhe:" opt; do
   case $opt in
+    e)  extra_args="-e${OPTARG}
+	;;
     v)
         verbose="-vvvv"
         shift
@@ -33,27 +37,53 @@ while getopts "vh" opt; do
   esac
 done
 
+##
+#  Just replacing this:
+#ANSIBLE_VAR_D=/edx/var/edx_ansible
+#  with:
+#  edx_ansible_data_dir
+
 
 if [[ -f {{ edx_ansible_var_file }} ]]; then
     extra_args="-e@{{ edx_ansible_var_file }}"
 fi
 
+# Add deployment level versioning selectors
+if [[ -f {{ edx_ansible_build_file }} ]]; then
+    extra_args="${extra_args} -e@{{ edx_ansible_build_file }}"
+fi
+
+# Add any additional vagrant level specified versioning, if a vagrant instance
+if [[ -f {{ edx_ansible_vagrant_build_file }} ]]; then
+    extra_args="${extra_args} -e@{{ edx_ansible_vagrant_build_file }}"
+fi
+
 declare -A repos_to_cmd
 edx_ansible_cmd="{{ edx_ansible_venv_bin}}/ansible-playbook -i localhost, -c local --tags deploy $extra_args "
 
-repos_to_cmd["edx-platform"]="$edx_ansible_cmd edxapp.yml -e 'edx_platform_version=$2'"
-repos_to_cmd["xqueue"]="$edx_ansible_cmd xqueue.yml -e 'xqueue_version=$2'"
-repos_to_cmd["cs_comments_service"]="$edx_ansible_cmd forum.yml -e 'forum_version=$2'"
-repos_to_cmd["xserver"]="$edx_ansible_cmd forums.yml -e 'xserver_version=$2'"
-repos_to_cmd["ease"]="$edx_ansible_cmd discern.yml -e 'discern_ease_version=$2' && $edx_ansible_cmd ora.yml -e 'ora_ease_version=$2'"
-repos_to_cmd["discern"]="$edx_ansible_cmd discern.yml -e 'discern_version=$2'"
-repos_to_cmd["edx-ora"]="$edx_ansible_cmd ora.yml -e 'ora_version=$2'"
-repos_to_cmd["configuration"]="$edx_ansible_cmd edx_ansible.yml -e 'configuration_version=$2'"
+if [[ -z $2 ]]; then
+    repos_to_cmd["edx-platform"]="$edx_ansible_cmd edxapp.yml"
+    repos_to_cmd["xqueue"]="$edx_ansible_cmd xqueue.yml"
+    repos_to_cmd["cs_comments_service"]="$edx_ansible_cmd forum.yml"
+    repos_to_cmd["xserver"]="$edx_ansible_cmd forums.yml"
+    repos_to_cmd["ease"]="$edx_ansible_cmd discern.yml && $edx_ansible_cmd ora.yml"
+    repos_to_cmd["discern"]="$edx_ansible_cmd discern.yml"
+    repos_to_cmd["edx-ora"]="$edx_ansible_cmd ora.yml"
+    repos_to_cmd["configuration"]="$edx_ansible_cmd edx_ansible.yml"
+else
+    repos_to_cmd["edx-platform"]="$edx_ansible_cmd edxapp.yml -e 'edx_platform_version=$2'"
+    repos_to_cmd["xqueue"]="$edx_ansible_cmd xqueue.yml -e 'xqueue_version=$2'"
+    repos_to_cmd["cs_comments_service"]="$edx_ansible_cmd forum.yml -e 'forum_version=$2'"
+    repos_to_cmd["xserver"]="$edx_ansible_cmd forums.yml -e 'xserver_version=$2'"
+    repos_to_cmd["ease"]="$edx_ansible_cmd discern.yml -e 'discern_ease_version=$2' && $edx_ansible_cmd ora.yml -e 'ora_ease_version=$2'"
+    repos_to_cmd["discern"]="$edx_ansible_cmd discern.yml -e 'discern_version=$2'"
+    repos_to_cmd["edx-ora"]="$edx_ansible_cmd ora.yml -e 'ora_version=$2'"
+    repos_to_cmd["configuration"]="$edx_ansible_cmd edx_ansible.yml -e 'configuration_version=$2'"
+fi
 
-
-if [[ -z $1 || -z $2 ]]; then
+if [[ -z $1 ]]; then
     echo
-    echo "ERROR: You must specify a repo and commit"
+    echo "ERROR: You must specify a repo"
     usage
     exit 1
 fi
@@ -66,4 +96,4 @@ if [[ -z ${repos_to_cmd[$1]} ]]; then
 fi
 
 cd {{ edx_ansible_code_dir }}/playbooks/edx-east
-eval "sudo ${repos_to_cmd["$1"]} $verbose"
+eval "sudo ${repos_to_cmd["$1"]} ${extra_args} $verbose"
